@@ -11,6 +11,8 @@ namespace CryptoLab1
     {
         public char Character;
         public int Count;
+
+        public int OrderNumber;
     }
 
     class Program
@@ -40,9 +42,11 @@ namespace CryptoLab1
                     .OrderByDescending(info => info.Count)
                     .ToList();
 
+            int order = 0;
+
             foreach (var charInfo in charInfos)
             {
-                Console.WriteLine("Char: {0}   Count: {1}", charInfo.Character, charInfo.Count);
+                Console.WriteLine("Char: {0}   Count: {1},   Order: {2}", charInfo.Character, charInfo.Count, order++);
             }
 
             Console.OutputEncoding = System.Text.Encoding.UTF8;
