@@ -31,9 +31,10 @@ class CharInfo
             'х', 'ц', 'ч', 'ш', 'щ', 'ъ', 'ы', 'ь', 'э', 'ю', 'я'
         };
 
+        // абвгдеёжзийклмнопрстуфхцчшщъыьэюя
         private static List<char> usedRussianLetters = new List<char>{
             'а', 'б', 'в', 'г', 'д', 'е', 'ж', 'з', 'и', 'й', 'к', 'л', 'м', 'н', 'о', 'п', 'р', 'с', 'т', 'у', 'ф',
-            'х', 'ц', 'ч', 'ш', 'щ', 'ы', 'ь', 'э', 'ю', 'я', 'ъ'
+            'х', 'ц', 'ч', 'ш', 'щ', 'ъ', 'ы', 'ь', 'э', 'ю', 'я'
         };
 
 
@@ -65,15 +66,15 @@ class CharInfo
 
         private static int CharToIndex(char c)
         {
-            return usedEnglish.IndexOf(c);
+            return usedRussianLetters.IndexOf(c);
         }
 
         private static char IndextoChar(int i)
         {
-            return usedEnglish[i];
+            return usedRussianLetters[i];
         }
 
-        private static HashSet<char> usedLetters_set = new HashSet<char>(usedEnglish);
+        private static HashSet<char> usedLetters_set = new HashSet<char>(usedRussianLetters);
 
         static List<CharInfo> GetCharInfos(string textBlock, bool verbose = false)
         {
@@ -127,53 +128,63 @@ class CharInfo
 
         static void Main(string[] args)
         {
+            foreach (var letter in usedRussianLetters)
+            {
+                Console.WriteLine("Letter: {0}  Index: {1}", letter, CharToIndex(letter));
+            }
+
             string encryptedText = File.ReadAllText("encrypted.txt", Encoding.Default);
+
+            //encryptedText = File.ReadAllText("tar.txt", Encoding.Default);
 
             string encryptedTextEng = File.ReadAllText("encryptedEng.txt", Encoding.Default);
 
 
             // Get example text statistics
 
-            /*
-            string exampleText = File.ReadAllText(encryptedTextEng, Encoding.Default);
+            
+            string exampleText = File.ReadAllText("encrypted.txt", Encoding.Default);
 
             var exampleDistribution = GetCharInfos(exampleText, verbose: true);
             
             Console.OutputEncoding = System.Text.Encoding.UTF8;
 
             Console.WriteLine();
-            */
 
             // Decrypt
             
             // Find r - period
 
 
-            encryptedText = encryptedTextEng;
+            // For english: encryptedText = encryptedTextEng;
 
             for (int r = 2; r < 40; r++)
             {
                 Console.WriteLine("r = {0}     Dr = {1}", r, Dr(encryptedText, r));
             }
-
+            /*
             for (int r = 2; r < 50; r++)
             {
                 Console.WriteLine("r = {0}     Eng Dr = {1}", r, Dr(encryptedTextEng, r));
             }
+            */
 
             // r = 17
 
-            int m = 26;
+            // Eng: int m = 26;
+            int m = 32;
 
-            int rActual = 15;
+            // Eng: int rActual = 15;
+
+            int rActual = 17;
 
             // Y blocks built
 
             int mostFreqNum = 3;
 
-            List<char> actualMostFreqRus = new List<char>(new char[] { 'о', 'е', 'а' });
+            List<char> actualMostFreq = new List<char>(new char[] { 'о', 'е', 'а'});
 
-            List<char> actualMostFreq = new List<char>(new char[] { 'e', 'a', 'r', 'i' });
+            List<char> actualMostFreqEn = new List<char>(new char[] { 'e', 'a', 'r', 'i' });
 
             // Build the Y blocks
             string[] Yblocks = new string[rActual];
@@ -185,7 +196,7 @@ class CharInfo
                 Yblocks[i % rActual] += encryptedText[i];
             }
 
-            
+            string key = string.Empty;
 
             // calculate frequencies for each block
             for (int blockI = 0; blockI < rActual; blockI++)
@@ -198,11 +209,16 @@ class CharInfo
                         CharToIndex(blockDistrib[0 + freqInd].Character);
 
                     // freqInd = 0
-                    var actualMostFrequent = actualMostFreq[0];
+                    var actualMostFrequent = actualMostFreq[freqInd];
 
                     var originalTextIndex = CharToIndex(actualMostFrequent);
 
-                    int CeasarShift = (orderNumberInTermsOfOriginalTableForMostFrequentCharacter - originalTextIndex) % m;  // 13 or -13
+                    int CeasarShift = (orderNumberInTermsOfOriginalTableForMostFrequentCharacter - originalTextIndex) % m;
+
+                    if (freqInd == 0)
+                    {
+                        key += IndextoChar((CeasarShift + m) % m);
+                    }
 
                     string s = string.Empty;
 
@@ -230,17 +246,32 @@ class CharInfo
                 }
             }
 
-            // first col to row
-            for (int columnInd = 0; columnInd < 5; columnInd++)
-            for (int blInd = 0; blInd < rActual; blInd++)
-            {
-                for (int freqInd = 0; freqInd < actualMostFreq.Count; freqInd++)
-                {
-                    Console.Write("{0} | ", YblocksShifted[blInd, freqInd][columnInd]);
-                }
+            var writeToFile = new StreamWriter(@"resulting-text-rus.txt");
 
-                Console.WriteLine();
-            }
+            // Output all the most probable options in table-like view
+            for (int columnInd = 0; columnInd < YblocksShifted[0, 0].Length; columnInd++)
+            for (int blInd = 0; blInd < rActual; blInd++)
+                try
+                {
+                    /*
+                    for (int freqInd = 0; freqInd < actualMostFreq.Count; freqInd++)
+                    {
+                        Console.Write("{0} | ", YblocksShifted[blInd, freqInd][columnInd]);
+                    }
+
+                    Console.WriteLine();
+                    */
+
+                    writeToFile.Write(YblocksShifted[blInd, 0][columnInd]);
+                }
+                catch (Exception exc)
+                {
+                    
+                }
+            
+            writeToFile.Close();
+
+            Console.WriteLine("{0}", key);
 
             Console.ReadKey();
         }
