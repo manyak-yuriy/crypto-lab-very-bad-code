@@ -7,7 +7,9 @@ using System.Threading.Tasks;
 
 namespace CryptoLab1
 {
-    struct CharInfo
+    
+
+struct CharInfo
     {
         public char Character;
         public int Count;
@@ -17,6 +19,22 @@ namespace CryptoLab1
 
     class Program
     {
+        private static char[] russianLetters =
+        {
+
+            'а', 'б', 'в', 'г', 'д', 'е', 'ё', 'ж', 'з', 'и', 'й', 'к', 'л', 'м', 'н', 'о', 'п', 'р', 'с', 'т', 'у', 'ф',
+            'х', 'ц', 'ч', 'ш', 'щ', 'ъ', 'ы', 'ь', 'э', 'ю', 'я'
+        };
+
+        private static char[] usedRussianLetters =
+        {
+
+            'а', 'б', 'в', 'г', 'д', 'е', 'ж', 'з', 'и', 'й', 'к', 'л', 'м', 'н', 'о', 'п', 'р', 'с', 'т', 'у', 'ф',
+            'х', 'ц', 'ч', 'ш', 'щ', 'ы', 'ь', 'э', 'ю', 'я', ' '
+        };
+
+        private static HashSet<char> usedRussianLetters_set = new HashSet<char>(usedRussianLetters);
+
         static void Main(string[] args)
         {
             string allText = File.ReadAllText("Arthur.txt", Encoding.Default);
@@ -34,11 +52,13 @@ namespace CryptoLab1
                 }
 
             List<CharInfo> charInfos =
-                charCount.Select(pair => new CharInfo()
+                charCount
+                .Select(pair => new CharInfo()
                     {
                         Character = pair.Key,
                         Count = pair.Value
                     })
+                    .Where(pair => usedRussianLetters_set.Contains(pair.Character))
                     .OrderByDescending(info => info.Count)
                     .ToList();
 
