@@ -35,23 +35,54 @@ class CharInfo
             'а', 'б', 'в', 'г', 'д', 'е', 'ж', 'з', 'и', 'й', 'к', 'л', 'м', 'н', 'о', 'п', 'р', 'с', 'т', 'у', 'ф',
             'х', 'ц', 'ч', 'ш', 'щ', 'ы', 'ь', 'э', 'ю', 'я', 'ъ'
         };
+
+
+        //abcdefghijklmnopqrstuvwxyz
+        private static List<char> usedEnglish = new List<char>()
+        {
+            'a',   'b',   'c',   'd',   'e',   'f',   'g',   'h',   'i',   'j',   'k',  'l', 'm', 'n', 'o', 'p' ,  'q' ,  'r',   's',  't',  'u','v',   'w',   'x',   'y',  'z'
+        };
         
+        /*
+         G 6
+         R 17
+         N 13
+         A 0
+         F 5
+         B 1
+         V 21
+        */
+
+        /*
+         E 4
+         A 0
+         R 17
+         I 8
+         O 14
+         T 19
+         N 13
+        */
 
         private static int CharToIndex(char c)
         {
-            return usedRussianLetters.IndexOf(c);
+            return usedEnglish.IndexOf(c);
         }
 
         private static char IndextoChar(int i)
         {
-            return usedRussianLetters[i];
+            return usedEnglish[i];
         }
 
-        private static HashSet<char> usedRussianLetters_set = new HashSet<char>(usedRussianLetters);
+        private static HashSet<char> usedLetters_set = new HashSet<char>(usedEnglish);
 
         static List<CharInfo> GetCharInfos(string textBlock, bool verbose = false)
         {
             Dictionary<char, int> charCount = new Dictionary<char, int>();
+
+            foreach (var letter in usedLetters_set)
+            {
+                charCount[letter] = 0;
+            }
 
             foreach (var character in textBlock)
                 if (charCount.ContainsKey(character))
@@ -60,7 +91,7 @@ class CharInfo
                 }
                 else
                 {
-                    charCount[character] = 1;
+                    throw new Exception("That's impossible");
                 }
 
             List<CharInfo> charInfos =
@@ -70,7 +101,7 @@ class CharInfo
                     Character = pair.Key,
                     Count = pair.Value
                 })
-                    .Where(pair => usedRussianLetters_set.Contains(pair.Character))
+                    .Where(pair => usedLetters_set.Contains(pair.Character))
                     .OrderByDescending(info => info.Count)
                     .ToList();
 
@@ -96,53 +127,65 @@ class CharInfo
 
         static void Main(string[] args)
         {
+            string encryptedText = File.ReadAllText("encrypted.txt", Encoding.Default);
+
+            string encryptedTextEng = File.ReadAllText("encryptedEng.txt", Encoding.Default);
+
+
             // Get example text statistics
 
-            string exampleText = File.ReadAllText("Arthur.txt", Encoding.Default);
+            /*
+            string exampleText = File.ReadAllText(encryptedTextEng, Encoding.Default);
 
             var exampleDistribution = GetCharInfos(exampleText, verbose: true);
             
             Console.OutputEncoding = System.Text.Encoding.UTF8;
 
             Console.WriteLine();
+            */
 
             // Decrypt
             
             // Find r - period
 
-            string encryptedText = File.ReadAllText("encrypted.txt", Encoding.Default);
+
+            encryptedText = encryptedTextEng;
 
             for (int r = 2; r < 40; r++)
             {
                 Console.WriteLine("r = {0}     Dr = {1}", r, Dr(encryptedText, r));
             }
 
-            for (int r = 2; r < 40; r++)
+            for (int r = 2; r < 50; r++)
             {
-                Console.WriteLine("r = {0}     Drr = {1}", r, Drr(encryptedText, r));
+                Console.WriteLine("r = {0}     Eng Dr = {1}", r, Dr(encryptedTextEng, r));
             }
 
             // r = 17
 
-            int m = 32;
+            int m = 26;
 
-            int rActual = 17;
-
-            // Build the Y blocks
-            string[] Yblocks = new string[rActual];
-
-            string[,] YblocksShifted = new string[rActual, 3];
-
-            for (int i = 0; i < encryptedText.Length; i++)
-            {
-                Yblocks[i% rActual] += encryptedText[i];
-            }
+            int rActual = 15;
 
             // Y blocks built
 
             int mostFreqNum = 3;
 
-            List<char> actualMostFreq = new List<char>(new char[] { 'о', 'е', 'а' });
+            List<char> actualMostFreqRus = new List<char>(new char[] { 'о', 'е', 'а' });
+
+            List<char> actualMostFreq = new List<char>(new char[] { 'e', 'a', 'r', 'i' });
+
+            // Build the Y blocks
+            string[] Yblocks = new string[rActual];
+
+            string[,] YblocksShifted = new string[rActual, actualMostFreq.Count];
+
+            for (int i = 0; i < encryptedText.Length; i++)
+            {
+                Yblocks[i % rActual] += encryptedText[i];
+            }
+
+            
 
             // calculate frequencies for each block
             for (int blockI = 0; blockI < rActual; blockI++)
@@ -152,13 +195,14 @@ class CharInfo
                     var blockDistrib = GetCharInfos(Yblocks[blockI]);
 
                     var orderNumberInTermsOfOriginalTableForMostFrequentCharacter =
-                        CharToIndex(blockDistrib[0].Character);
+                        CharToIndex(blockDistrib[0 + freqInd].Character);
 
-                    var actualMostFrequent = actualMostFreq[freqInd];
+                    // freqInd = 0
+                    var actualMostFrequent = actualMostFreq[0];
 
                     var originalTextIndex = CharToIndex(actualMostFrequent);
 
-                    int CeasarShift = (orderNumberInTermsOfOriginalTableForMostFrequentCharacter - originalTextIndex) % m;
+                    int CeasarShift = (orderNumberInTermsOfOriginalTableForMostFrequentCharacter - originalTextIndex) % m;  // 13 or -13
 
                     string s = string.Empty;
 
@@ -168,7 +212,12 @@ class CharInfo
 
                         int alphaBeticalOrder = CharToIndex(Yblocks[blockI][i]);
 
-                        int shiftedAlphabeticalOrder = (m + alphaBeticalOrder - CeasarShift) % m;
+                        int shiftedAlphabeticalOrder = (alphaBeticalOrder - CeasarShift) % m;
+
+                        if (shiftedAlphabeticalOrder < 0)
+                        {
+                            shiftedAlphabeticalOrder += m;
+                        } 
 
                         char replacementCharacter = IndextoChar(shiftedAlphabeticalOrder);
 
@@ -177,16 +226,17 @@ class CharInfo
 
                     YblocksShifted[blockI, freqInd] = s;
 
-                    // Console.WriteLine("[{0}]", s.Substring(0, 6));
+                    Console.WriteLine("Block №{0}: {1}, order current: {2}, order orig: {3}", blockI, CeasarShift, orderNumberInTermsOfOriginalTableForMostFrequentCharacter, originalTextIndex);
                 }
             }
 
             // first col to row
+            for (int columnInd = 0; columnInd < 5; columnInd++)
             for (int blInd = 0; blInd < rActual; blInd++)
             {
                 for (int freqInd = 0; freqInd < actualMostFreq.Count; freqInd++)
                 {
-                    Console.Write("{0} | ", YblocksShifted[blInd, freqInd][0]);
+                    Console.Write("{0} | ", YblocksShifted[blInd, freqInd][columnInd]);
                 }
 
                 Console.WriteLine();
