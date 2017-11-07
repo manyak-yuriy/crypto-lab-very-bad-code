@@ -3,8 +3,10 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
+using Microsoft.Office.Interop.Excel;
 
 namespace CryptoLab1
 {
@@ -126,23 +128,24 @@ class CharInfo
             return charInfos;
         }
 
+
+        static Application xlApp = new Microsoft.Office.Interop.Excel.Application();
+
         static void Main(string[] args)
         {
-            foreach (var letter in usedRussianLetters)
-            {
-                Console.WriteLine("Letter: {0}  Index: {1}", letter, CharToIndex(letter));
-            }
+            object misValue = System.Reflection.Missing.Value;
+            var xlWorkBook = xlApp.Workbooks.Add(misValue);
+            var xlWorkSheet = (Worksheet)xlWorkBook.Worksheets.get_Item(1);
 
             string encryptedText = File.ReadAllText("encrypted.txt", Encoding.Default);
-
-            //encryptedText = File.ReadAllText("tar.txt", Encoding.Default);
-
+            var writeToFile = new StreamWriter(@"resulting-text-rus.txt");
+            
             string encryptedTextEng = File.ReadAllText("encryptedEng.txt", Encoding.Default);
 
 
             // Get example text statistics
 
-            
+            /*
             string exampleText = File.ReadAllText("encrypted.txt", Encoding.Default);
 
             var exampleDistribution = GetCharInfos(exampleText, verbose: true);
@@ -150,32 +153,43 @@ class CharInfo
             Console.OutputEncoding = System.Text.Encoding.UTF8;
 
             Console.WriteLine();
-
+            */
             // Decrypt
-            
+
             // Find r - period
 
 
             // For english: encryptedText = encryptedTextEng;
 
+            xlWorkSheet.Cells[1, 1] = "r";
+            xlWorkSheet.Cells[1, 2] = "Dr";
+
             for (int r = 2; r < 40; r++)
             {
-                Console.WriteLine("r = {0}     Dr = {1}", r, Dr(encryptedText, r));
-            }
-            /*
-            for (int r = 2; r < 50; r++)
-            {
-                Console.WriteLine("r = {0}     Eng Dr = {1}", r, Dr(encryptedTextEng, r));
-            }
-            */
+                var dr = Dr(encryptedText, r);
 
-            // r = 17
+                Console.WriteLine("r = {0}     Dr = {1}", r, dr);
 
-            // Eng: int m = 26;
-            int m = 32;
+                xlWorkSheet.Cells[r, 1] = r.ToString();
+                xlWorkSheet.Cells[r, 2] = dr.ToString();
+            }
+                /*
+                for (int r = 2; r < 50; r++)
+                {
+                    Console.WriteLine("r = {0}     Eng Dr = {1}", r, Dr(encryptedTextEng, r));
+                }
+                */
+
+                // r = 17
+
+                // Eng: int m = 26;
+
+            // Rus
+                int m = 32;
 
             // Eng: int rActual = 15;
 
+            // Russian
             int rActual = 17;
 
             // Y blocks built
@@ -215,6 +229,12 @@ class CharInfo
 
                     int CeasarShift = (orderNumberInTermsOfOriginalTableForMostFrequentCharacter - originalTextIndex) % m;
 
+                    // Correction
+                    if (blockI == rActual - 2)
+                    {
+                        CeasarShift = 13;
+                    }
+
                     if (freqInd == 0)
                     {
                         key += IndextoChar((CeasarShift + m) % m);
@@ -245,8 +265,7 @@ class CharInfo
                     Console.WriteLine("Block №{0}: {1}, order current: {2}, order orig: {3}", blockI, CeasarShift, orderNumberInTermsOfOriginalTableForMostFrequentCharacter, originalTextIndex);
                 }
             }
-
-            var writeToFile = new StreamWriter(@"resulting-text-rus.txt");
+            
 
             // Output all the most probable options in table-like view
             for (int columnInd = 0; columnInd < YblocksShifted[0, 0].Length; columnInd++)
@@ -261,7 +280,6 @@ class CharInfo
 
                     Console.WriteLine();
                     */
-
                     writeToFile.Write(YblocksShifted[blInd, 0][columnInd]);
                 }
                 catch (Exception exc)
@@ -274,6 +292,25 @@ class CharInfo
             Console.WriteLine("{0}", key);
 
             Console.ReadKey();
+
+            xlWorkBook.SaveAs(Path.Combine(Directory.GetCurrentDirectory(), "result-russian.xls"), 
+                XlFileFormat.xlWorkbookNormal, 
+                misValue, 
+                misValue, 
+                misValue, 
+                misValue, 
+                XlSaveAsAccessMode.xlExclusive, 
+                misValue, 
+                misValue, 
+                misValue, 
+                misValue, 
+                misValue);
+            xlWorkBook.Close(true, misValue, misValue);
+            xlApp.Quit();
+
+            Marshal.ReleaseComObject(xlWorkSheet);
+            Marshal.ReleaseComObject(xlWorkBook);
+            Marshal.ReleaseComObject(xlApp);
         }
 
         static int Dr(string encryptedText, int r)
