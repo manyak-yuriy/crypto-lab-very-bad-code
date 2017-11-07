@@ -68,15 +68,15 @@ class CharInfo
 
         private static int CharToIndex(char c)
         {
-            return usedRussianLetters.IndexOf(c);
+            return usedEnglish.IndexOf(c);
         }
 
         private static char IndextoChar(int i)
         {
-            return usedRussianLetters[i];
+            return usedEnglish[i];
         }
 
-        private static HashSet<char> usedLetters_set = new HashSet<char>(usedRussianLetters);
+        private static HashSet<char> usedLetters_set = new HashSet<char>(usedEnglish);
 
         static List<CharInfo> GetCharInfos(string textBlock, bool verbose = false)
         {
@@ -138,7 +138,7 @@ class CharInfo
             var xlWorkSheet = (Worksheet)xlWorkBook.Worksheets.get_Item(1);
 
             string encryptedText = File.ReadAllText("encrypted.txt", Encoding.Default);
-            var writeToFile = new StreamWriter(@"resulting-text-rus.txt");
+            var writeToFile = new StreamWriter(@"resulting-text.txt");
             
             string encryptedTextEng = File.ReadAllText("encryptedEng.txt", Encoding.Default);
 
@@ -159,7 +159,8 @@ class CharInfo
             // Find r - period
 
 
-            // For english: encryptedText = encryptedTextEng;
+            // For english: 
+            encryptedText = encryptedTextEng;
 
             xlWorkSheet.Cells[1, 1] = "r";
             xlWorkSheet.Cells[1, 2] = "Dr";
@@ -173,32 +174,34 @@ class CharInfo
                 xlWorkSheet.Cells[r, 1] = r.ToString();
                 xlWorkSheet.Cells[r, 2] = dr.ToString();
             }
-                /*
-                for (int r = 2; r < 50; r++)
-                {
-                    Console.WriteLine("r = {0}     Eng Dr = {1}", r, Dr(encryptedTextEng, r));
-                }
-                */
+            /*
+            for (int r = 2; r < 50; r++)
+            {
+                Console.WriteLine("r = {0}     Eng Dr = {1}", r, Dr(encryptedTextEng, r));
+            }
+            */
 
-                // r = 17
+            // r = 17
 
-                // Eng: int m = 26;
+            // Eng: 
+            int m = 26;
 
             // Rus
-                int m = 32;
+            //int m = 32;
 
-            // Eng: int rActual = 15;
+            // Eng: 
+            int rActual = 15;
 
             // Russian
-            int rActual = 17;
+            //int rActual = 17;
 
             // Y blocks built
 
             int mostFreqNum = 3;
 
-            List<char> actualMostFreq = new List<char>(new char[] { 'о', 'е', 'а'});
+            List<char> actualMostFreqRus = new List<char>(new char[] { 'о', 'е', 'а'});
 
-            List<char> actualMostFreqEn = new List<char>(new char[] { 'e', 'a', 'r', 'i' });
+            List<char> actualMostFreq = new List<char>(new char[] { 'e', 'a', 'r', 'i' });
 
             // Build the Y blocks
             string[] Yblocks = new string[rActual];
@@ -223,17 +226,19 @@ class CharInfo
                         CharToIndex(blockDistrib[0 + freqInd].Character);
 
                     // freqInd = 0
-                    var actualMostFrequent = actualMostFreq[freqInd];
+                    var actualMostFrequent = actualMostFreq[0];
 
                     var originalTextIndex = CharToIndex(actualMostFrequent);
 
                     int CeasarShift = (orderNumberInTermsOfOriginalTableForMostFrequentCharacter - originalTextIndex) % m;
 
+                    
                     // Correction
-                    if (blockI == rActual - 2)
+                    if (blockI == 2)
                     {
                         CeasarShift = 13;
                     }
+                    
 
                     if (freqInd == 0)
                     {
@@ -293,7 +298,7 @@ class CharInfo
 
             Console.ReadKey();
 
-            xlWorkBook.SaveAs(Path.Combine(Directory.GetCurrentDirectory(), "result-russian.xls"), 
+            xlWorkBook.SaveAs(Path.Combine(Directory.GetCurrentDirectory(), "result-eng.xls"), 
                 XlFileFormat.xlWorkbookNormal, 
                 misValue, 
                 misValue, 
